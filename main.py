@@ -33,7 +33,7 @@ def ddpg_train(plot=False, env=None):
     print('States have length:', state_size)
 
     # Agent 
-    agent = Agent(state_size, n_agents, action_size, 4, './solved_models/', loadModel=False)
+    agent = Agent(state_size, n_agents, action_size, 4, './models/', loadModel=False)
 
     scores = []
     scores_window = deque(maxlen=100)
