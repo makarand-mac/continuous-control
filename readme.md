@@ -1,5 +1,5 @@
- Udacity Navigation Project
-DQN Agent solving Unity Banana Environment
+Udacity Reacher Project
+DDPG Agent solving Unity Reacher Environment
 
 ## Environment Info
 
