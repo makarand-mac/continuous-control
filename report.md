@@ -63,7 +63,7 @@ The problem is considered solved when the agents achieve average reward of 30+ o
     - Activation: [Rectifier](https://en.wikipedia.org/wiki/Rectifier_(neural_networks))
 
 ## Scores
-`Environment solved in 116 episodes!	Average Score: 30.34`
+`Environment solved in 116 episodes!	Average Score: 30.34`<br>
 ![alt text](./Assets/Graph.png "Scores Over Episode")
 
 
