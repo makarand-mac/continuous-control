@@ -1,4 +1,4 @@
-Udacity Reacher Project
+# Udacity Reacher Project
 DDPG Agent solving Unity Reacher Environment
 
 ## Environment Info
@@ -34,3 +34,6 @@ DDPG Agent solving Unity Reacher Environment
 - Run `python3 main.py`
 
 ### [Report](./report.md)
+
+## Credits
+Base code is taken from Udacity Pendelum Environment Solution
