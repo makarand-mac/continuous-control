@@ -130,3 +130,6 @@ def play_solved(env=None):
 
         print('Episode: \t{} \tScore: \t{:.2f}'.format(episode, np.mean(score)))      
     env.close()
+
+if __name__ == "__main__":
+    play_solved()
