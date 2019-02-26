@@ -1,81 +1,132 @@
-import random
-import torch
+from unityagents import UnityEnvironment
+
 import numpy as np
 from collections import deque
+
+import torch
 import matplotlib.pyplot as plt
-from unityagents import UnityEnvironment
 
 from agent import Agent
 
-def ddpg_agent(n_episodes=2500, max_t=1000, env: UnityEnvironment = None):
-    """Deep Deterministic Policy Gradient.
-    
-    Params
-    ======
-        n_episodes (int): maximum number of training episodes
-        max_t (int): maximum number of timesteps per episode
-        env (UnityEnvironment): Unity Environment to solve
-    """
 
-    if not env: 
-        env = UnityEnvironment('./Reacher_Linux/Reacher.x86_64')
+def ddpg_train(plot=False, env=None):
 
-    # get the default brain
+    if not env:
+        env=UnityEnvironment(file_name="./Reacher_Linux/Reacher.x86_64")
+
     brain_name = env.brain_names[0]
     brain = env.brains[brain_name]
 
+    # environment information
     # reset the environment
     env_info = env.reset(train_mode=True)[brain_name]
-
-    # number of agents
-    num_agents = len(env_info.agents)
-    print('Number of agents:', num_agents)
-
-    # size of each action
+    # number of agents in the environment
+    n_agents = len(env_info.agents)
+    print('Number of agents:', n_agents)
+    # number of actions
     action_size = brain.vector_action_space_size
-    print('Size of each action:', action_size)
-
+    print('Number of actions:', action_size)
     # examine the state space 
-    states = env_info.vector_observations
-    state_size = states.shape[1]
-    print('There are {} agents. Each observes a state with length: {}'.format(states.shape[0], state_size))
-    print('The state for the first agent looks like:', states[0])
+    state = env_info.vector_observations[0]
+    print('States look like:', state)
+    state_size = len(state)
+    print('States have length:', state_size)
 
-    agent = Agent(state_size=state_size, action_size=action_size, random_seed=3)
-    average_score = dict()             # average score list containing avg score every 100 episode
-    scores = []                        # list containing scores from each episode
-    scores_window = deque(maxlen=100)  # last 100 scores
+    # Agent 
+    agent = Agent(state_size, n_agents, action_size, 4, './solved_models/', loadModel=False)
 
-    for i_episode in range(1, n_episodes+1):
+    scores = []
+    scores_window = deque(maxlen=100)
+    n_episodes = 1000
 
-        env_info = env.reset(train_mode=True)[brain_name]  # reset the environment
-        state = env_info.vector_observations              # current state
-        score = np.zeros(num_agents)
-
-        for t in range(max_t):
-
-            actions = agent.act(state)
-            env_info = env.step(actions)[brain_name]           # send all actions to tne environment
-            next_state = env_info.vector_observations         # get next state (for each agent)
-            reward = env_info.rewards                         # get reward (for each agent)
-            done = env_info.local_done                        # see if episode finished
-
-            agent.step(state, actions, reward, next_state, done, t)
-            score += env_info.rewards                         # update the score (for each agent)
-
-            if np.any(done):
-                break
+    for episode in range(n_episodes):
+        env_info = env.reset(train_mode=True)[brain_name]            # reset the environment
+        states = env_info.vector_observations
+        agent.reset()                                                # reset the agent noise
+        score = np.zeros(n_agents)
         
-        scores_window.append(np.mean(score))      # save most recent score
-        scores.append(np.mean(score))             # save most recent score
-        # print('\rEpisode {}\tAverage Score: {:.2f}, Memory : {}'.format(i_episode, np.mean(scores_window), len(agent.memory)), end="")
-        if i_episode % 5 == 0:
-            avg_score = np.mean(scores_window)
-            average_score[i_episode] = avg_score
-            print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
-        if np.mean(scores_window)>=30.0:
-            print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            agent.save_models()
+        while True:
+            actions = agent.act(states)
+        
+            env_info = env.step( actions )[brain_name]               # send the action to the environment                            
+            next_states = env_info.vector_observations               # get the next state        
+            rewards = env_info.rewards                               # get the reward        
+            dones = env_info.local_done                              # see if episode has finished        
+
+            agent.step(states, actions, rewards, next_states, dones)
+
+            score += rewards                                         # update the score
+        
+            states = next_states                                     # roll over the state to next time step        
+                                                        
+            if np.any( dones ):                                        # exit loop if episode finished        
+                break                                        
+
+        if episode % 5 == 0:
+            agent.save_model()
+
+        scores.append(np.mean(score))
+        scores_window.append(np.mean(score))
+
+        print('\rEpisode: \t{} \tScore: \t{:.2f} \tAverage Score: \t{:.2f}'.format(episode, np.mean(score), np.mean(scores_window)), end="")  
+        
+        if np.mean(scores_window) >= 30.0:
+            print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(episode, np.mean(scores_window)))
+            agent.save_model()
             break
+
+    if plot:  
+        plt.plot(np.arange(1, len(scores)+1), scores)
+        plt.ylabel('Score')
+        plt.xlabel('Episode #')
+        plt.show()
+
     env.close()
     return scores
+
+
+def play_solved(env=None):
+
+    if not env:
+        env=UnityEnvironment(file_name="./Reacher_Linux/Reacher.x86_64")
+
+    brain_name = env.brain_names[0]
+    brain = env.brains[brain_name]
+
+    # Reset the environment
+    env_info = env.reset(train_mode=True)[brain_name]
+    # Number of agents in the environment
+    n_agents = len(env_info.agents)
+    print('Number of agents:', n_agents)
+    # Number of actions
+    action_size = brain.vector_action_space_size
+    print('Number of actions:', action_size)
+    # Examine the state space 
+    state = env_info.vector_observations[0]
+    print('States look like:', state)
+    state_size = len(state)
+    print('States have length:', state_size)
+
+    # Agent 
+    agent = Agent(state_size, n_agents, action_size, 4, './solved_models/', loadModel=True)
+
+    for episode in range(3):
+        env_info = env.reset(train_mode=False)[brain_name]        
+        states = env_info.vector_observations       
+        score = np.zeros(n_agents)               
+
+        while True:
+            actions = agent.act(states, add_noise=False)                    
+
+            env_info = env.step(actions)[brain_name]        
+            next_states = env_info.vector_observations     
+            rewards = env_info.rewards       
+            dones = env_info.local_done
+            score += rewards
+            states = next_states
+
+            if np.any(dones):                              
+                break
+
+        print('Episode: \t{} \tScore: \t{:.2f}'.format(episode, np.mean(score)))      
+    env.close()
