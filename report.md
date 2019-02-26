@@ -70,6 +70,7 @@ The problem is considered solved when the agents achieve average reward of 30+ o
 ## Future Plans
 
 - Tryout different initial weights to measure impact on training time
+- Solve crawler environment in distributed environment
 
 ## Remarks
 
